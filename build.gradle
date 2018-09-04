@@ -1,5 +1,4 @@
-
-plugins {
+ <!-- plugins {
     id 'java'
     id 'war'
 }
@@ -18,4 +17,78 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 group 'ms'
-version '1.0-SNAPSHOT'
+version '1.0-SNAPSHOT'  -->
+
+buildscript {
+    apply from: "//ms/dist/msde/PROJ/gradle/4.x-2018.07.02-1/common/etc/buildinfra/buildscript.gradle", to: buildscript
+}
+
+apply plugin: 'msde-single-project'
+apply plugin: 'msde-msjavaresolvers'
+apply plugin: 'msde-war'
+//apply plugin: 'msde-testcase-quality'
+apply plugin: 'java'
+apply plugin: 'msde-idea'
+apply plugin: 'application'
+
+mainClassName = 'com.ms.fxcashsnt.markservice.sentinel.Main'
+
+repositories {
+    add(msjavaresolvers.afsDist())
+    add(msjavaresolvers.msjavaIvyRepDist())
+    add(msjavaresolvers.riaIvyRepDist())
+}
+
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
+}
+
+dependencies {
+    compile group: 'msjava', name: 'hdom', 'version': '2018.07.18', configuration: 'runtime'
+    compile group: 'msjava', name: 'cxfutils', 'version': '2018.07.18', configuration: 'runtime'
+    compile group: 'msjava', name: 'logbackutils', 'version': '2018.07.18', configuration: 'runtime'
+    compile group: 'ossjava', name: 'commons-lang3', 'version': '3.7.0', configuration: 'runtime'
+    compile group: 'ossjava', name: 'jackson2', 'version': '2.9.5', configuration: 'runtime'
+    compile group: 'ossjava', name: 'weka', 'version': '3.8.0', configuration: 'runtime'
+    compile group: 'ossjava', name: 'jstl', 'version': '1.1.2', configuration: 'runtime'
+    compile group: 'ossjava', name: 'guava', 'version': '23.0.0', configuration: 'runtime'
+    compile group: 'fx', name: 'java-parts', 'version': '2018.07.30-1', configuration: 'admin'
+    compile group: 'ossjava', name: 'freemarker', 'version': '2.3.28', configuration: 'runtime'
+
+    compile(group: 'ossjava', name: 'spring', version: '5.0.5', configuration: 'runtime') {
+        // runtime configuration needed
+        artifact { name = 'spring-web-5.0.5.RELEASE'; type = 'jar' }
+        artifact { name = 'spring-webmvc-5.0.5.RELEASE'; type = 'jar' }
+        artifact { name = 'spring-test-5.0.5.RELEASE'; type = 'jar' }
+    }
+    compile group: 'ossjava', name: 'sqlite-jdbc', 'version': '3.20.0', configuration: 'runtime'
+    compile group: 'ossjava', name: 'commons-dbcp', 'version': '1.4.0', configuration: 'runtime'
+    compile group: 'ossjava', name: 'hsqldb', 'version': '2.2.9', configuration: 'runtime'
+    testCompile group: 'ossjava', name: 'junit', version: '4.12.0', configuration: 'runtime'
+
+}
+
+war {
+    isManifestMode = true
+    isForWindows = true
+    from 'web'
+}
+
+
+buildDir = "$projectDir.parentFile/build"
+
+
+task deploylocal(dependsOn: war) {
+    doLast {
+        def tomcatHome = "U:\\My Documents\\tomcat\\8.5.12\\tomcat"
+        println "Copy '${buildDir}\\libs\\${war.archiveName}' into '${tomcatHome}\\webapps'"
+        copy {
+            from "${buildDir}\\libs\\${war.archiveName}"
+            into "${tomcatHome}\\webapps"
+            rename "${war.archiveName}", "sentinel.war"
+        }
+    }
+}
