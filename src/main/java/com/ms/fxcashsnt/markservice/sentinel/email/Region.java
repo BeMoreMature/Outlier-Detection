@@ -1,4 +1,13 @@
-package com.ms.fxcashsnt.markservice.sentinel.email;
+package com.ms.fxcashsnt.markservice.sentinel.mail;
 
-public class Region {
+/**
+ * user: Carl,Wu
+ * date: 8/3/2018
+ */
+public enum Region {
+    SH,
+    NY,
+    LN,
+    HK,
+    TK
 }
