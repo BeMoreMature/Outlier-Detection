@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<configuration>
+    <contextName>@meta@/@project@/@release@-@env@</contextName>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="com.ms.fx.common.logging.logback.EnhancedPatternLayout">
+            <pattern>%u [%thread] %-5level %em{/var/tmp/FX/MarkServiceNew,100000,30,1000} &lt;%logger&gt;%n</pattern>
+        </layout>
+    </appender>
+
+    <appender name="FILE" class="msjava.logbackutils.rolling.RollingCountingFileAppender">
+        <file>/var/tmp/FX/MarkServiceNew/sentinel.log</file>
+        <rolloverOnRestart>true</rolloverOnRestart>
+        <rollingPolicy class="msjava.logbackutils.rolling.TimestampedRollingPolicy">
+            <fileNamePattern>/var/tmp/FX/MarkServiceNew/sentinel.log.%d{yyyyMMdd.HHmmss}</fileNamePattern>
+            <maxHistory>@SENTINEL_LOG_FILE_RETAIN_COUNT@</maxHistory>
+            <maxFileSize>@SENTINEL_LOG_FILE_MAX_SIZE@</maxFileSize>
+        </rollingPolicy>
+        <layout class="com.ms.fx.common.logging.logback.EnhancedPatternLayout">
+            <pattern>%u [%thread] %-5level %em{/var/tmp/FX/MarkServiceNew,100000,30,1000} &lt;%logger&gt;%n</pattern>
+        </layout>
+    </appender>
+
+    <logger name="appmw" level="warn"/>
+    <logger name="msjava" level="warn"/>
+
+    <!-- suppress warnings and errors on connection problems - these generally occur via due to connectivity problems
+         which we detect independently anyway -->
+    <logger name="msjava.pool.BasicObjectPool" level="off"/>
+    <!-- suppress warnings about programmatic bean creation -->
+    <logger name="msjava.cxfutils.util.ConfigValidatorBean" level="error"/>
+    <!-- suppress warnings about active local JMX connector -->
+    <logger name="msjava.management.jmx.remote.protocol.rmi.internal.JMXLocalRMIConnectorServerProvider" level="warn"/>
+    <!-- NB. This only controls logging of messages from the netcool implementation itself - it does not have any effect on the
+         level at which netcools are sent -->
+    <logger name="msjava/netcool/1.0" level="warn"/>
+    <logger name="org.apache.cxf.interceptor.LoggingOutInterceptor" level="Info"/>
+    <logger name="org.springframework" level="warn"/>
+
+    <logger name="com.ms.fx.common.connection.soap.JaxbHeaderedSoapConnection" level="warn"/>
+    <logger name="com.ms.fx.common.connection.markservice.MarkServiceConnector" level="warn"/>
+    <logger name="com.ms.fx.common.markservice.v1.impl.MarkServiceImpl" level="warn"/>
+    <logger name="org.apache.cxf.service.factory.ReflectionServiceFactoryBean" level="error"/>
+    <logger name="org.apache.cxf.bus.spring.ControlledValidationXmlBeanDefinitionReader" level="error"/>
+
+    <root level="Info">
+        <appender-ref ref="FILE"/>
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>
