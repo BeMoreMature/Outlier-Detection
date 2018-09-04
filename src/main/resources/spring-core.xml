@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx" xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
+
+
+    <!-- 启用spring mvc 注解 -->
+    <mvc:annotation-driven/>
+    <!-- 开启注解扫描-->
+    <context:component-scan base-package="com.ms.fxcashsnt.markservice.sentinel"/>
+
+    <context:property-placeholder location="classpath:configure.properties"/>
+
+    <!--Using SingleConnectionDataSource rather than DriverManangerDataSource for the reason that when using sqlite as the-->
+    <!--database, a write thread will throw a SQLLTE_BUSY exception if the other thread is reading the database.-->
+    <!--Sqlite uses a single file, and cannot serialize different write operations.-->
+    <!--Using MySQL as the backend can increase the capacity of the database.-->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.SingleConnectionDataSource">
+        <!--<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">-->
+        <!--<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">-->
+        <property name="driverClassName" value="${jdbc.driverClassName}"/>
+        <property name="url" value="${jdbc.url}"/>
+        <property name="username" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+    </bean>
+
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!-- enable the configuration of transactional behavior based on annotations -->
+    <tx:annotation-driven transaction-manager="txManager"/>
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+
+    <bean id="markCurveDownloader" class="com.ms.fxcashsnt.markservice.sentinel.util.MarkCurveDownloader">
+        <property name="markServiceAddress" value="${mark_server_address}"/>
+        <property name="markCurveHistoryFolderPath" value=""/>
+        <property name="queryInterval" value="${mark_curve_downloader.query_interval}"/>
+        <property name="markCurveQueryResultDAO" ref="markCurveQueryResultDAO"/>
+    </bean>
+
+    <task:scheduler id="myScheduler" pool-size="10" />
+    <task:scheduled-tasks scheduler="myScheduler">
+        <task:scheduled ref="markCurveDownloader" method="downloadEODMarkCurve" cron="0 0 0 * * *"/>
+        <task:scheduled ref="reportCache" method="refreshAllConcurrent" cron="0 1 0 * * *" />
+        <!--<task:scheduled ref="markCurveDownloader" method="workDaemon" cron="0 * * * * *" />-->
+    </task:scheduled-tasks>
+
+
+    <bean id="emailNotifier" class="com.ms.fxcashsnt.markservice.sentinel.mail.EmailNotifier">
+        <constructor-arg index="0" value="Carl.Wu@morganstanley.com"/>
+    </bean>
+
+    <bean id="freemarkerConfiguration" class="org.springframework.ui.freemarker.FreeMarkerConfigurationFactoryBean">
+        <property name="templateLoaderPath" value="/"/>
+    </bean>
+
+    <bean id="ftlMail" class="com.ms.fxcashsnt.markservice.sentinel.mail.FTLMail">
+        <constructor-arg index="0" value="${base_dir}${DirectoryForTemplateLoading}"/>
+    </bean>
+</beans>
+
